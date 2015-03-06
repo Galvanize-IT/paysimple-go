@@ -1,6 +1,7 @@
 package paysimple
 
 import (
+	"net/url"
 	"time"
 )
 
@@ -70,7 +71,30 @@ type Payment struct {
 	// FailureReceiptOptions
 }
 
+// PaymentsResponse is the response returned from the payments endpoint
 type PaymentsResponse struct {
-	Meta
+	Meta     Meta
 	Response []Payment
+}
+
+// PaymentFilters create GET parameters for the payments endpoint
+type PaymentFilters struct {
+	PaginationFilters
+	StartDate, EndDate Date
+	Lite               bool
+}
+
+// Values returns GET parameters for payments
+func (f PaymentFilters) Values() url.Values {
+	values := f.PaginationFilters.Values()
+	if !f.StartDate.IsZero() {
+		values.Set("startdate", f.StartDate.String())
+	}
+	if !f.EndDate.IsZero() {
+		values.Set("enddate", f.EndDate.String())
+	}
+	if f.Lite {
+		values.Set("lite", "true")
+	}
+	return values
 }

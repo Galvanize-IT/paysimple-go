@@ -59,5 +59,20 @@ func TestPayment(t *testing.T) {
 	assert.Equal("Test", payment.CustomerFirstName)
 	assert.Equal("Person", payment.CustomerLastName)
 
-	// TODO Test dates
+	// TODO Test times
+}
+
+func TestPaymentFilters(t *testing.T) {
+	assert := assert.New(t)
+
+	filters := PaymentFilters{
+		PaginationFilters: PaginationFilters{PageSize: 10},
+		StartDate:         NewDate(2012, 3, 2),
+		Lite:              true,
+	}
+	values := filters.Values()
+	require.Equal(t, 3, len(values))
+	assert.Equal("10", values.Get("pagesize"))
+	assert.Equal("2012-03-02", values.Get("startdate"))
+	assert.Equal("true", values.Get("lite"))
 }
