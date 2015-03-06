@@ -1,6 +1,7 @@
 package paysimple
 
 import (
+	"encoding/json"
 	"net/url"
 	"time"
 )
@@ -97,4 +98,41 @@ func (f PaymentFilters) Values() url.Values {
 		values.Set("lite", "true")
 	}
 	return values
+}
+
+type Payments struct {
+	api *api
+}
+
+// List returns multiple payments
+// TODO pass filters
+func (c *Payments) List() ([]Payment, error) {
+	// Create a new request
+	req, err := c.api.Get(c.api.URL("v4", "payment"))
+	if err != nil {
+		return nil, err
+	}
+
+	// Perform the request using the given backend
+	resp, err := c.api.backend.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var response PaymentsResponse
+	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		// Convert the response body to the error format
+		return nil, c.api.decodeError(resp)
+	}
+
+	if response.Meta.Errors != nil {
+		return nil, response.Meta.Errors
+	}
+
+	// Return the actual payments
+	return response.Response, nil
 }
