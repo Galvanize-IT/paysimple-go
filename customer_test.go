@@ -44,14 +44,53 @@ var customerExample = `{
     "CreatedOn": "2013-10-01T19:16:38.5061103Z"
 }`
 
-func TestCustomer(t *testing.T) {
-	assert := assert.New(t)
+// An actual customer response
+var customerResponseExample = `{
+  "Meta": {
+    "Errors": null,
+    "HttpStatus": "Created",
+    "HttpStatusCode": 201,
+    "PagingDetails": null
+  },
+  "Response": {
+    "Website": null,
+    "ShippingAddress": null,
+    "Fax": null,
+    "Id": 292152,
+    "MobilePhone": null,
+    "FirstName": "Test B.",
+    "Phone": null,
+    "MiddleName": null,
+    "LastName": "Customer",
+    "Company": null,
+    "AltPhone": null,
+    "CreatedOn": "2015-03-11T05:31:53.2209562Z",
+    "Email": null,
+    "ShippingSameAsBilling": false,
+    "CustomerAccount": null,
+    "BillingAddress": null,
+    "LastModified": "2015-03-11T05:31:53.2209562Z",
+    "AltEmail": null,
+    "Notes": null
+  }
+}`
 
+func TestCustomer(t *testing.T) {
 	var customer Customer
 	require.Nil(t, json.Unmarshal([]byte(customerExample), &customer))
 
-	assert.Equal(255939, customer.ID)
-	assert.Equal("Test", customer.FirstName)
-	assert.Equal("Person", customer.LastName)
-	assert.Equal("", customer.MiddleName)
+	assert.Equal(t, 255939, customer.ID)
+	assert.Equal(t, "Test", customer.FirstName)
+	assert.Equal(t, "Person", customer.LastName)
+	assert.Equal(t, "", customer.MiddleName)
+
+	var response CustomerResponse
+	require.Nil(t, json.Unmarshal([]byte(customerResponseExample), &response))
+	customer = response.Response
+
+	assert.Equal(t, 292152, customer.ID)
+	assert.Equal(t, "Test B.", customer.FirstName)
+	assert.Equal(t, "Customer", customer.LastName)
+	assert.Equal(t, "", customer.MiddleName)
+
 }

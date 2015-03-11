@@ -38,12 +38,19 @@ type Customer struct {
 	CreatedOn             *time.Time `json:",omitempty"`
 }
 
+// CustomersResponse is returned by Customers.List
 type CustomersResponse struct {
 	Meta     Meta
 	Response []Customer
 }
 
-// Customers handles requests to the Customers API endpoint
+// CustomerResponse is returned by Customers.Create
+type CustomerResponse struct {
+	Meta     Meta
+	Response Customer
+}
+
+// Customers handles requests to the Customer API endpoint
 type Customers struct {
 	api *api
 }
@@ -69,9 +76,11 @@ func (c *Customers) Create(create Customer) (created Customer, err error) {
 		return
 	}
 
+	var response CustomerResponse
+
 	defer resp.Body.Close()
-	err = json.NewDecoder(resp.Body).Decode(&created)
-	return
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	return response.Response, err
 }
 
 // Get returns a single customer

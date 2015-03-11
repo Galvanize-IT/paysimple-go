@@ -25,9 +25,9 @@ func TestPaysimple_test(t *testing.T) {
 			panic(err)
 		}
 
-		// And set it back down with an ID set
+		// And set it back down with an ID set and wrapped in a response
 		customer.ID = 99
-		content, err := json.Marshal(customer)
+		content, err := json.Marshal(CustomerResponse{Response: customer})
 		if err != nil {
 			panic(err)
 		}
@@ -93,10 +93,14 @@ func TestPaysimple_Customers(t *testing.T) {
 	// Create a sanbox API
 	api := Sandbox()
 
+	// Common response variables
 	var err error
+	var customers []Customer
+	var created Customer
 
-	_, err = api.Customers.List()
+	customers, err = api.Customers.List()
 	require.Nil(t, err, "Customers List should not error")
+	assert.NotNil(t, customers)
 
 	// Create a new customer
 	customer := Customer{
@@ -104,6 +108,40 @@ func TestPaysimple_Customers(t *testing.T) {
 		LastName:              "Customer",
 		ShippingSameAsBilling: true,
 	}
-	_, err = api.Customers.Create(customer)
+	created, err = api.Customers.Create(customer)
 	require.Nil(t, err, "Customers Create should not error")
+
+	// The created customer should match the sent customer
+	assert.Equal(t, customer.FirstName, created.FirstName)
+	assert.Equal(t, customer.LastName, created.LastName)
+
+	// TODO Created ShippingSameAsBilling is returning false - is this
+	// the expected behavior when addresses are missing?
+	// assert.Equal(t,
+	// 	customer.ShippingSameAsBilling, created.ShippingSameAsBilling,
+	// )
+}
+
+func TestPaysimple_Accounts(t *testing.T) {
+	// Bootstrap the environment
+	envy.Bootstrap()
+
+	// Create a sanbox API
+	api := Sandbox()
+
+	card := CreditCard{
+		CustomerID:       292031,
+		CreditCardNumber: "4111111111111111",
+		ExpirationDate:   "12/2019",
+		Issuer:           Visa,
+		BillingZipCode:   "80202",
+		IsDefault:        false,
+	}
+
+	created, err := api.Accounts.CreateCreditCard(card)
+	require.Nil(t, err, "Create credit card should not error")
+
+	// The created card should match the sent card
+	// However, all the last four numbers of the card are removed
+	assert.Equal(t, card.ExpirationDate, created.ExpirationDate)
 }

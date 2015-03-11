@@ -17,7 +17,7 @@ const (
 type Meta struct {
 	Errors         *Errors
 	HttpStatus     string
-	HttpStatusCode int64
+	HttpStatusCode int
 	PagingDetails  struct {
 		TotalItems   int64
 		Page         int64
@@ -29,6 +29,7 @@ type Errors struct {
 	ErrorCode     ErrorCode
 	ErrorMessages []ErrorMessage
 	TraceCode     string
+	StatusCode    int // Not part of the API - added so error has code
 }
 
 var _ error = Errors{}
@@ -40,9 +41,10 @@ func (err Errors) Error() string {
 		fields[i] = fmt.Sprintf("(%s)", msg)
 	}
 	return fmt.Sprintf(
-		"%s - %s: %s",
+		"%s - %s (status %d): %s",
 		err.ErrorCode,
 		err.TraceCode,
+		err.StatusCode,
 		strings.Join(fields, " "),
 	)
 }

@@ -100,6 +100,7 @@ func (f PaymentFilters) Values() url.Values {
 	return values
 }
 
+// Payments handles requests to the Payment API endpoint
 type Payments struct {
 	api *api
 }
@@ -119,15 +120,15 @@ func (c *Payments) List() ([]Payment, error) {
 		return nil, err
 	}
 
+	if resp.StatusCode != 200 {
+		// Convert the response body to the error format
+		return nil, c.api.decodeError(resp)
+	}
+
 	var response PaymentsResponse
 	defer resp.Body.Close()
 	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode != 200 {
-		// Convert the response body to the error format
-		return nil, c.api.decodeError(resp)
 	}
 
 	if response.Meta.Errors != nil {

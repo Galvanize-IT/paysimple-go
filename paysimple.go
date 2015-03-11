@@ -18,6 +18,7 @@ type api struct {
 	backend backend
 
 	// Resource endpoints
+	Accounts  *Accounts
 	Payments  *Payments
 	Customers *Customers
 }
@@ -28,6 +29,8 @@ func (api *api) decodeError(resp *http.Response) error {
 	if err := json.NewDecoder(resp.Body).Decode(&empty); err != nil {
 		return fmt.Errorf("paysimple: failed to decode error: %s", err)
 	}
+	// Set the status code on the error itself
+	empty.Meta.Errors.StatusCode = empty.Meta.HttpStatusCode
 	return empty.Meta.Errors
 }
 
@@ -52,7 +55,15 @@ func (api *api) Post(uri *url.URL, v interface{}) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
-	return api.request("POST", uri, bytes.NewBuffer(content))
+
+	req, err := api.request("POST", uri, bytes.NewBuffer(content))
+	if err != nil {
+		return nil, err
+	}
+
+	// Set the content type - THIS IS IMPORTANT BECAUSE JAVA/SPRING SUCKS
+	req.Header.Set("Content-Type", "application/json")
+	return req, nil
 }
 
 func (api *api) URL(path ...string) *url.URL {
@@ -86,6 +97,8 @@ func create(baseURL url.URL) *api {
 		backend: &http.Client{},
 	}
 
+	// Connect endpoints
+	api.Accounts = &Accounts{api: api}
 	api.Payments = &Payments{api: api}
 	api.Customers = &Customers{api: api}
 	return api
