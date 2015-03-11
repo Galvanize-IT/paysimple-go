@@ -120,6 +120,7 @@ func (c *Payments) List() ([]Payment, error) {
 	}
 
 	var response PaymentsResponse
+	defer resp.Body.Close()
 	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}

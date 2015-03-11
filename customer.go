@@ -48,7 +48,7 @@ type Customers struct {
 	api *api
 }
 
-// Get returns a single customer
+// Create creates and returns a single customer
 func (c *Customers) Create(create Customer) (created Customer, err error) {
 	// Create a new request
 	var req *http.Request
@@ -62,12 +62,14 @@ func (c *Customers) Create(create Customer) (created Customer, err error) {
 		return
 	}
 
-	if resp.StatusCode != 201 {
+	if resp.StatusCode != http.StatusCreated {
 		// Convert the response body to the error format
 		err = c.api.decodeError(resp)
+		// TODO error might still be nil!
 		return
 	}
 
+	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(&created)
 	return
 }
@@ -87,12 +89,13 @@ func (c *Customers) Get(id int64) (customer Customer, err error) {
 		return
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		// Convert the response body to the error format
 		err = c.api.decodeError(resp)
 		return
 	}
 
+	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(&customer)
 	return
 }
@@ -113,11 +116,12 @@ func (c *Customers) List() ([]Customer, error) {
 	}
 
 	var response CustomersResponse
+	defer resp.Body.Close()
 	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		// Convert the response body to the error format
 		return nil, c.api.decodeError(resp)
 	}

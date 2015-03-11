@@ -1,6 +1,9 @@
 package paysimple
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
 
@@ -8,6 +11,50 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestPaysimple_test(t *testing.T) {
+	// Bootstrap the environment
+	envy.Bootstrap()
+
+	// Start an http test server
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Attempt to unmarshal the request body
+		var customer Customer
+		defer r.Body.Close()
+		if err := json.NewDecoder(r.Body).Decode(&customer); err != nil {
+			panic(err)
+		}
+
+		// And set it back down with an ID set
+		customer.ID = 99
+		content, err := json.Marshal(customer)
+		if err != nil {
+			panic(err)
+		}
+		w.WriteHeader(http.StatusCreated)
+		w.Write(content)
+	})
+	ts := httptest.NewServer(handler)
+	defer ts.Close()
+
+	api := test(ts.URL)
+
+	// Create a new customer
+	customer := Customer{
+		FirstName:             "Test B.",
+		LastName:              "Customer",
+		ShippingSameAsBilling: true,
+	}
+	created, err := api.Customers.Create(customer)
+	require.Nil(t, err, "Customers Create should not error")
+	assert.Equal(t, 99, created.ID)
+	assert.Equal(t, customer.FirstName, created.FirstName)
+	assert.Equal(t, customer.LastName, created.LastName)
+	assert.Equal(t,
+		customer.ShippingSameAsBilling,
+		created.ShippingSameAsBilling,
+	)
+}
 
 func TestPaysimple_URL(t *testing.T) {
 	assert := assert.New(t)
@@ -17,14 +64,14 @@ func TestPaysimple_URL(t *testing.T) {
 
 	// Test customers
 	assert.Equal(
-		"https://api.paysimple.com/v4/customers",
-		api.URL("v4", "customers").String(),
+		"https://api.paysimple.com/v4/customer",
+		api.URL("v4", "customer").String(),
 	)
 
 	// Test Payments
 	assert.Equal(
-		"https://api.paysimple.com/v4/payments",
-		api.URL("v4", "payments").String(),
+		"https://api.paysimple.com/v4/payment",
+		api.URL("v4", "payment").String(),
 	)
 }
 
@@ -53,7 +100,7 @@ func TestPaysimple_Customers(t *testing.T) {
 
 	// Create a new customer
 	customer := Customer{
-		FirstName:             "Test A.",
+		FirstName:             "Test B.",
 		LastName:              "Customer",
 		ShippingSameAsBilling: true,
 	}

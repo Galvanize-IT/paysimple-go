@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -23,6 +24,7 @@ type api struct {
 
 func (api *api) decodeError(resp *http.Response) error {
 	var empty Empty
+	defer resp.Body.Close()
 	if err := json.NewDecoder(resp.Body).Decode(&empty); err != nil {
 		return fmt.Errorf("paysimple: failed to decode error: %s", err)
 	}
@@ -30,7 +32,6 @@ func (api *api) decodeError(resp *http.Response) error {
 }
 
 func (api *api) request(method string, uri *url.URL, body io.Reader) (*http.Request, error) {
-	// TODO No body for now
 	req, err := http.NewRequest(method, uri.String(), body)
 	if err != nil {
 		return nil, err
@@ -96,4 +97,13 @@ func API() *api {
 
 func Sandbox() *api {
 	return create(url.URL{Scheme: "https", Host: "sandbox-api.paysimple.com"})
+}
+
+// test is a test backend for internal httptest
+func test(uri string) *api {
+	parsed, err := url.Parse(uri)
+	if err != nil {
+		log.Panic(err)
+	}
+	return create(*parsed)
 }
